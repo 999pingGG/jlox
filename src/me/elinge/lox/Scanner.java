@@ -95,6 +95,30 @@ public class Scanner {
                     while (peek() != '\n' && !isAtEnd()) {
                         advance();
                     }
+                } else if (match('*')) {
+                    // Start of a multiline, possibly nested comment.
+                    var nestedCommentLevel = 1;
+                    while (nestedCommentLevel > 0 && !isAtEnd()) {
+                        switch (peek()) {
+                            case '\n':
+                                line++;
+                                break;
+                            case '/':
+                                if (peekNext() == '*') {
+                                    nestedCommentLevel++;
+                                    advance();
+                                }
+                                break;
+                            case '*':
+                                if (peekNext() == '/') {
+                                    nestedCommentLevel--;
+                                    advance();
+                                }
+                                break;
+                        }
+
+                        advance();
+                    }
                 } else {
                     addToken(TokenType.SLASH);
                 }
