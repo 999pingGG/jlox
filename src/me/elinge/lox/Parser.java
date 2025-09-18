@@ -21,6 +21,26 @@ class Parser {
     }
 
     private Expr expression() {
+        return checkNotBinaryOperator();
+    }
+
+    private Expr checkNotBinaryOperator() {
+        if (match(
+                TokenType.MINUS,
+                TokenType.PLUS,
+                TokenType.SLASH,
+                TokenType.STAR,
+                TokenType.BANG_EQUAL,
+                TokenType.EQUAL_EQUAL,
+                TokenType.GREATER,
+                TokenType.GREATER_EQUAL,
+                TokenType.LESS,
+                TokenType.LESS_EQUAL)) {
+            // Discard right-hand operand.
+            comma();
+            throw error(peek(), "Binary operator without left-hand operand.");
+        }
+
         return comma();
     }
 
