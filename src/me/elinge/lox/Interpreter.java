@@ -17,20 +17,84 @@ class Interpreter implements Expr.Visitor<Object> {
 
         return switch (expr.operator.type()) {
             case GREATER -> {
-                checkNumberOperands(expr.operator, left, right);
-                yield (double)left > (double)right;
+                if (left instanceof Double && right instanceof Double) {
+                    yield (double)left > (double)right;
+                }
+
+                if (left instanceof String && right instanceof String) {
+                    var a = (String)left;
+                    var b = (String)right;
+
+                    for (int i = 0; i < a.length() && i < b.length(); i++) {
+                        if (a.codePointAt(i) > b.codePointAt(i)) {
+                            yield true;
+                        }
+                    }
+
+                    yield false;
+                }
+
+                throw new RuntimeException("Operands must be both numbers or both strings.");
             }
             case GREATER_EQUAL -> {
-                checkNumberOperands(expr.operator, left, right);
-                yield (double)left >= (double)right;
+                if (left instanceof Double && right instanceof Double) {
+                    yield (double)left >= (double)right;
+                }
+
+                if (left instanceof String && right instanceof String) {
+                    var a = (String)left;
+                    var b = (String)right;
+
+                    for (int i = 0; i < a.length() && i < b.length(); i++) {
+                        if (a.codePointAt(i) >= b.codePointAt(i)) {
+                            yield true;
+                        }
+                    }
+
+                    yield false;
+                }
+
+                throw new RuntimeException("Operands must be both numbers or both strings.");
             }
             case LESS -> {
-                checkNumberOperands(expr.operator, left, right);
-                yield (double)left < (double)right;
+                if (left instanceof Double && right instanceof Double) {
+                    yield (double)left < (double)right;
+                }
+
+                if (left instanceof String && right instanceof String) {
+                    var a = (String)left;
+                    var b = (String)right;
+
+                    for (int i = 0; i < a.length() && i < b.length(); i++) {
+                        if (a.codePointAt(i) < b.codePointAt(i)) {
+                            yield true;
+                        }
+                    }
+
+                    yield false;
+                }
+
+                throw new RuntimeException("Operands must be both numbers or both strings.");
             }
             case LESS_EQUAL -> {
-                checkNumberOperands(expr.operator, left, right);
-                yield (double)left <= (double)right;
+                if (left instanceof Double && right instanceof Double) {
+                    yield (double)left <= (double)right;
+                }
+
+                if (left instanceof String && right instanceof String) {
+                    var a = (String)left;
+                    var b = (String)right;
+
+                    for (int i = 0; i < a.length() && i < b.length(); i++) {
+                        if (a.codePointAt(i) <= b.codePointAt(i)) {
+                            yield true;
+                        }
+                    }
+
+                    yield false;
+                }
+
+                throw new RuntimeException("Operands must be both numbers or both strings.");
             }
             case MINUS -> {
                 checkNumberOperands(expr.operator, left, right);
