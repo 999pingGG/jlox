@@ -21,7 +21,17 @@ class Parser {
     }
 
     private Expr expression() {
-        return equality();
+        return comma();
+    }
+
+    private Expr comma() {
+        var expr = equality();
+
+        while (match(TokenType.COMMA)) {
+            expr = equality();
+        }
+
+        return expr;
     }
 
     private Expr equality() {
@@ -128,7 +138,7 @@ class Parser {
     }
 
     private boolean check(TokenType type) {
-        return isAtEnd() ? false : peek().type() == type;
+        return !isAtEnd() && peek().type() == type;
     }
 
     private Token advance() {
