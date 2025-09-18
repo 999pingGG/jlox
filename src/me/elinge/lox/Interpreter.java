@@ -34,7 +34,7 @@ class Interpreter implements Expr.Visitor<Object> {
                     yield false;
                 }
 
-                throw new RuntimeException("Operands must be both numbers or both strings.");
+                throw new RuntimeError(expr.operator, "Operands must be both numbers or both strings.");
             }
             case GREATER_EQUAL -> {
                 if (left instanceof Double && right instanceof Double) {
@@ -54,7 +54,7 @@ class Interpreter implements Expr.Visitor<Object> {
                     yield false;
                 }
 
-                throw new RuntimeException("Operands must be both numbers or both strings.");
+                throw new RuntimeError(expr.operator, "Operands must be both numbers or both strings.");
             }
             case LESS -> {
                 if (left instanceof Double && right instanceof Double) {
@@ -74,7 +74,7 @@ class Interpreter implements Expr.Visitor<Object> {
                     yield false;
                 }
 
-                throw new RuntimeException("Operands must be both numbers or both strings.");
+                throw new RuntimeError(expr.operator, "Operands must be both numbers or both strings.");
             }
             case LESS_EQUAL -> {
                 if (left instanceof Double && right instanceof Double) {
@@ -94,7 +94,7 @@ class Interpreter implements Expr.Visitor<Object> {
                     yield false;
                 }
 
-                throw new RuntimeException("Operands must be both numbers or both strings.");
+                throw new RuntimeError(expr.operator, "Operands must be both numbers or both strings.");
             }
             case MINUS -> {
                 checkNumberOperands(expr.operator, left, right);
@@ -113,11 +113,15 @@ class Interpreter implements Expr.Visitor<Object> {
                     yield (double)left + (double)right;
                 }
 
-                if (left instanceof String && right instanceof String) {
-                    yield left + (String)right;
+                if (left == null) {
+                    throw new RuntimeError(expr.operator, "Left-side operand is nil.");
                 }
 
-                throw new RuntimeException("Operands must be both numbers or both strings.");
+                if (right == null) {
+                    throw new RuntimeError(expr.operator, "Right-side operand is nil.");
+                }
+
+                yield left.toString() + right.toString();
             }
             case BANG_EQUAL -> !isEqual(left, right);
             case EQUAL_EQUAL -> isEqual(left, right);
