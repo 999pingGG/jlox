@@ -46,4 +46,5 @@ define_ast(
         ('Grouping', 'Expr expression'),
         ('Literal',  'Object value'),
         ('Unary',    'Token operator, Expr right'),
+        ('Ternary',  'Expr left, Token operator1, Expr middle, Token operator2, Expr right'),
     ])

@@ -33,6 +33,17 @@ class Rpn implements Expr.Visitor<String> {
                 expr.operator.lexeme());
     }
 
+    @Override
+    public String visitTernaryExpr(Expr.Ternary expr) {
+        return String.format(
+                "%s %s %s %s%s",
+                expr.left.accept(this),
+                expr.middle.accept(this),
+                expr.right.accept(this),
+                expr.operator1.lexeme(),
+                expr.operator2.lexeme());
+    }
+
     public static void main(String[] args) {
         Expr expression = new Expr.Binary(
                 new Expr.Grouping(

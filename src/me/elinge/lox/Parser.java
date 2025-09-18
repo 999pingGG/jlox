@@ -25,10 +25,24 @@ class Parser {
     }
 
     private Expr comma() {
-        var expr = equality();
+        var expr = elvis();
 
         while (match(TokenType.COMMA)) {
-            expr = equality();
+            expr = elvis();
+        }
+
+        return expr;
+    }
+
+    private Expr elvis() {
+        var expr = equality();
+
+        if (match(TokenType.QUESTION)) {
+            var operator1 = previous();
+            var middle = elvis();
+            var operator2 = consume(TokenType.COLON, "Expected ':' after '?' in elvis operator.");
+            var right = elvis();
+            expr = new Expr.Ternary(expr, operator1, middle, operator2, right);
         }
 
         return expr;
