@@ -1,10 +1,16 @@
 package me.elinge.lox;
 
-class Interpreter implements Expr.Visitor<Object> {
-    void interpret(Expr expression) {
+import java.util.List;
+
+class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
+    private Environment environment = new Environment();
+
+    void interpret(List<Stmt> statements) {
         try {
-            Object value = expression.accept(this);
-            System.out.println(stringify(value));
+            for (var statement : statements) {
+                // Execute statement.
+                statement.accept(this);
+            }
         } catch (RuntimeError error) {
             Lox.runtimeError(error);
         }
@@ -163,6 +169,11 @@ class Interpreter implements Expr.Visitor<Object> {
         return isTruthy(expr.left.accept(this)) ? expr.middle.accept(this) : expr.right.accept(this);
     }
 
+    @Override
+    public Object visitVariableExpr(Expr.Variable expr) {
+        return environment.get(expr.name);
+    }
+
     private void checkNumberOperand(Token operator, Object operand) {
         if (!(operand instanceof Double)) {
             throw new RuntimeError(operator, "Operand must be a number.");
@@ -214,5 +225,50 @@ class Interpreter implements Expr.Visitor<Object> {
         }
 
         return object.toString();
+    }
+
+    @Override
+    public Void visitExpressionStmt(Stmt.Expression stmt) {
+        stmt.expression.accept(this);
+        return null;
+    }
+
+    @Override
+    public Void visitPrintStmt(Stmt.Print stmt) {
+        System.out.println(stringify(stmt.expression.accept(this)));
+        return null;
+    }
+
+    @Override
+    public Void visitVarStmt(Stmt.Var stmt) {
+        var value = stmt.initializer == null ? null : stmt.initializer.accept(this);
+        environment.define(stmt.name.lexeme(), value);
+        return null;
+    }
+
+    @Override
+    public Object visitAssignExpr(Expr.Assign expr) {
+        var value = expr.value.accept(this);
+        environment.assign(expr.name, value);
+        return value;
+    }
+
+    @Override
+    public Void visitBlockStmt(Stmt.Block stmt) {
+        executeBlock(stmt.statements, new Environment(environment));
+        return null;
+    }
+
+    private void executeBlock(List<Stmt> statements, Environment environment) {
+        var previous = this.environment;
+        try {
+            this.environment = environment;
+
+            for (var statement : statements) {
+                statement.accept(this);
+            }
+        } finally {
+            this.environment = previous;
+        }
     }
 }

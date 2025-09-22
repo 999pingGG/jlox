@@ -44,6 +44,16 @@ class Rpn implements Expr.Visitor<String> {
                 expr.operator2.lexeme());
     }
 
+    @Override
+    public String visitAssignExpr(Expr.Assign expr) {
+        return expr.name + " " + expr.value + " =";
+    }
+
+    @Override
+    public String visitVariableExpr(Expr.Variable expr) {
+        return expr.name.lexeme();
+    }
+
     public static void main(String[] args) {
         Expr expression = new Expr.Binary(
                 new Expr.Grouping(

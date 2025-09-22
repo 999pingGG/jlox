@@ -13,6 +13,8 @@ def define_ast(output_directory, base_name, types):
         out.write(
 f'''package me.elinge.lox;
 
+import java.util.List;
+
 abstract class {base_name} {{
 {define_visitor(class_names, base_name)}
 
@@ -42,9 +44,20 @@ define_ast(
     output_directory,
     'Expr',
     [
+        ('Assign',   'Token name, Expr value'),
         ('Binary',   'Expr left, Token operator, Expr right'),
         ('Grouping', 'Expr expression'),
         ('Literal',  'Object value'),
         ('Unary',    'Token operator, Expr right'),
         ('Ternary',  'Expr left, Token operator1, Expr middle, Token operator2, Expr right'),
+        ('Variable', 'Token name'),
     ])
+define_ast(
+	output_directory,
+	'Stmt',
+	[
+		('Block',      'List<Stmt> statements'),
+		('Expression', 'Expr expression'),
+		('Print',      'Expr expression'),
+		('Var',        'Token name, Expr initializer'),
+	])

@@ -1,9 +1,12 @@
 package me.elinge.lox;
 
+import java.util.ArrayList;
 import java.util.List;
 
 class Parser {
-    private static class ParseError extends RuntimeException {}
+    private static class ParseError extends RuntimeException {
+        private static final long serialVersionUID = -7164347622529507778L;
+    }
 
     private final List<Token> tokens;
     private int current = 0;
@@ -12,16 +15,95 @@ class Parser {
         this.tokens = tokens;
     }
 
-    Expr parse() {
+    List<Stmt> parse() {
         try {
-            return expression();
+            var statements = new ArrayList<Stmt>();
+            while (!isAtEnd()) {
+                statements.add(declaration());
+            }
+
+            return statements;
         } catch (ParseError error) {
             return null;
         }
     }
 
     private Expr expression() {
-        return checkNotBinaryOperator();
+        return assignment();
+    }
+
+    private Stmt declaration() {
+        try {
+            return match(TokenType.VAR) ? varDeclaration() : statement();
+        } catch (ParseError error) {
+            synchronize();
+            return null;
+        }
+    }
+
+    private Stmt statement() {
+        if (match(TokenType.PRINT)) {
+            return printStatement();
+        }
+
+        if (match(TokenType.LEFT_BRACE)) {
+            return new Stmt.Block(block());
+        }
+
+        return  expressionStatement();
+    }
+
+    private Stmt printStatement() {
+        var value = expression();
+        consume(TokenType.SEMICOLON, "Expected ';' after value.");
+        return new Stmt.Print(value);
+    }
+
+    private Stmt varDeclaration() {
+        var name = consume(TokenType.IDENTIFIER, "Expected variable name.");
+
+        Expr initializer = null;
+        if (match(TokenType.EQUAL)) {
+            initializer = expression();
+        }
+
+        consume(TokenType.SEMICOLON, "Expected ';' after variable declaration.");
+        return new Stmt.Var(name, initializer);
+    }
+
+    private Stmt expressionStatement() {
+        var expr = expression();
+        consume(TokenType.SEMICOLON, "Expected ';' after expression.");
+        return new Stmt.Expression(expr);
+    }
+
+    private List<Stmt> block() {
+        List<Stmt> statements = new ArrayList<>();
+
+        while (!check(TokenType.RIGHT_BRACE) && !isAtEnd()) {
+            statements.add(declaration());
+        }
+
+        consume(TokenType.RIGHT_BRACE, "Expected '}' after block.");
+        return statements;
+    }
+
+    private Expr assignment() {
+        var expr = checkNotBinaryOperator();
+
+        if (match(TokenType.EQUAL)) {
+            var equals = previous();
+            var value = assignment();
+
+            if (expr instanceof Expr.Variable) {
+                var name = ((Expr.Variable)expr).name;
+                return new Expr.Assign(name, value);
+            }
+
+            error(equals, "Invalid assignment target.");
+        }
+
+        return expr;
     }
 
     private Expr checkNotBinaryOperator() {
@@ -141,6 +223,10 @@ class Parser {
 
         if (match(TokenType.NUMBER, TokenType.STRING)) {
             return new Expr.Literal(previous().literal());
+        }
+
+        if (match(TokenType.IDENTIFIER)) {
+            return new Expr.Variable(previous());
         }
 
         if (match(TokenType.LEFT_PAREN)) {

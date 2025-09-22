@@ -13,13 +13,12 @@ public class Lox {
     static boolean hadRuntimeError = false;
 
     public static void main(String[] args) throws IOException {
-        if (args.length > 1) {
-            System.out.println("Usage: jlox [script]");
-            System.exit(64); // EX_USAGE
-        } else if (args.length == 1) {
-            runFile(args[0]);
-        } else {
+        if (args.length == 0) {
             runPrompt();
+        } else {
+            for (var file : args) {
+                runFile(file);
+            }
         }
     }
 
@@ -55,14 +54,14 @@ public class Lox {
         var tokens = scanner.scanTokens();
 
         var parser = new Parser(tokens);
-        var expression = parser.parse();
+        var statements = parser.parse();
 
         // Stop if there was a syntax error.
         if (hadError) {
             return;
         }
 
-        interpreter.interpret(expression);
+        interpreter.interpret(statements);
     }
 
     static void error(int line, String message) {
