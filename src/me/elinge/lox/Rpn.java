@@ -26,6 +26,15 @@ class Rpn implements Expr.Visitor<String> {
     }
 
     @Override
+    public String visitLogicalExpr(Expr.Logical expr) {
+        return String.format(
+                "%s %s %s",
+                expr.left.accept(this),
+                expr.right.accept(this),
+                expr.operator.lexeme());
+    }
+
+    @Override
     public String visitUnaryExpr(Expr.Unary expr) {
         return String.format(
                 "%s%s",

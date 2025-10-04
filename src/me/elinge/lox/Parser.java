@@ -1,10 +1,12 @@
 package me.elinge.lox;
 
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 
 class Parser {
     private static class ParseError extends RuntimeException {
+        @Serial
         private static final long serialVersionUID = -7164347622529507778L;
     }
 
@@ -42,8 +44,20 @@ class Parser {
     }
 
     private Stmt statement() {
+        if (match(TokenType.FOR)) {
+            return forStatement();
+        }
+
+        if (match(TokenType.IF)) {
+            return ifStatement();
+        }
+
         if (match(TokenType.PRINT)) {
             return printStatement();
+        }
+
+        if (match(TokenType.WHILE)) {
+            return whileStatement();
         }
 
         if (match(TokenType.LEFT_BRACE)) {
@@ -51,6 +65,54 @@ class Parser {
         }
 
         return  expressionStatement();
+    }
+
+    private Stmt forStatement() {
+        consume(TokenType.LEFT_PAREN, "Expected '(' after 'for'.");
+
+        Stmt initializer;
+        if (match(TokenType.SEMICOLON)) {
+            initializer = null;
+        } else if (match(TokenType.VAR)) {
+            initializer = varDeclaration();
+        } else {
+            initializer = expressionStatement();
+        }
+
+        var condition = check(TokenType.SEMICOLON) ? null : expression();
+        consume(TokenType.SEMICOLON, "Expected ';' after loop condition.");
+
+        var increment = check(TokenType.RIGHT_PAREN) ? null : expression();
+        consume(TokenType.RIGHT_PAREN, "Expected ')' after for clauses.");
+
+        var body = statement();
+
+        if (increment != null) {
+            body = new Stmt.Block(List.of(body, new Stmt.Expression(increment)));
+        }
+
+        if (condition == null) {
+            condition = new Expr.Literal(true);
+        }
+
+        body = new Stmt.While(condition, body);
+
+        if (initializer != null) {
+            body = new Stmt.Block(List.of(initializer, body));
+        }
+
+        return body;
+    }
+
+    private Stmt ifStatement() {
+        consume(TokenType.LEFT_PAREN, "Expected '(' after 'if'.");
+        var condition = expression();
+        consume(TokenType.RIGHT_PAREN, "Expected ')' after condition.");
+
+        var thenBranch = statement();
+        var elseBranch = match(TokenType.ELSE) ? statement() : null;
+
+        return new Stmt.If(condition, thenBranch, elseBranch);
     }
 
     private Stmt printStatement() {
@@ -71,6 +133,15 @@ class Parser {
         return new Stmt.Var(name, initializer);
     }
 
+    private Stmt whileStatement() {
+        consume(TokenType.LEFT_PAREN, "Expected '(' after 'while'.");
+        var condition = expression();
+        consume(TokenType.RIGHT_PAREN, "Expected ')' after condition.");
+        var body = statement();
+
+        return new Stmt.While(condition, body);
+    }
+
     private Stmt expressionStatement() {
         var expr = expression();
         consume(TokenType.SEMICOLON, "Expected ';' after expression.");
@@ -89,7 +160,7 @@ class Parser {
     }
 
     private Expr assignment() {
-        var expr = checkNotBinaryOperator();
+        var expr = or();
 
         if (match(TokenType.EQUAL)) {
             var equals = previous();
@@ -100,7 +171,31 @@ class Parser {
                 return new Expr.Assign(name, value);
             }
 
-            error(equals, "Invalid assignment target.");
+            throw error(equals, "Invalid assignment target.");
+        }
+
+        return expr;
+    }
+
+    private Expr or() {
+        var expr = and();
+
+        while (match(TokenType.OR)) {
+            var operator = previous();
+            var right = and();
+            expr = new Expr.Logical(expr, operator, right);
+        }
+
+        return expr;
+    }
+
+    private Expr and() {
+        var expr = checkNotBinaryOperator();
+
+        while (match(TokenType.AND)) {
+            var operator = previous();
+            var right = checkNotBinaryOperator();
+            expr = new Expr.Logical(expr, operator, right);
         }
 
         return expr;

@@ -27,10 +27,7 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                     yield (double)left > (double)right;
                 }
 
-                if (left instanceof String && right instanceof String) {
-                    var a = (String)left;
-                    var b = (String)right;
-
+                if (left instanceof String a && right instanceof String b) {
                     for (int i = 0; i < a.length() && i < b.length(); i++) {
                         if (a.codePointAt(i) > b.codePointAt(i)) {
                             yield true;
@@ -47,10 +44,7 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                     yield (double)left >= (double)right;
                 }
 
-                if (left instanceof String && right instanceof String) {
-                    var a = (String)left;
-                    var b = (String)right;
-
+                if (left instanceof String a && right instanceof String b) {
                     for (int i = 0; i < a.length() && i < b.length(); i++) {
                         if (a.codePointAt(i) >= b.codePointAt(i)) {
                             yield true;
@@ -67,10 +61,7 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                     yield (double)left < (double)right;
                 }
 
-                if (left instanceof String && right instanceof String) {
-                    var a = (String)left;
-                    var b = (String)right;
-
+                if (left instanceof String a && right instanceof String b) {
                     for (int i = 0; i < a.length() && i < b.length(); i++) {
                         if (a.codePointAt(i) < b.codePointAt(i)) {
                             yield true;
@@ -87,10 +78,7 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                     yield (double)left <= (double)right;
                 }
 
-                if (left instanceof String && right instanceof String) {
-                    var a = (String)left;
-                    var b = (String)right;
-
+                if (left instanceof String a && right instanceof String b) {
                     for (int i = 0; i < a.length() && i < b.length(); i++) {
                         if (a.codePointAt(i) <= b.codePointAt(i)) {
                             yield true;
@@ -132,7 +120,7 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                     throw new RuntimeError(expr.operator, "Right-side operand is nil.");
                 }
 
-                yield left.toString() + right.toString();
+                yield left.toString() + right;
             }
             case BANG_EQUAL -> !isEqual(left, right);
             case EQUAL_EQUAL -> isEqual(left, right);
@@ -148,6 +136,23 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     @Override
     public Object visitLiteralExpr(Expr.Literal expr) {
         return expr.value;
+    }
+
+    @Override
+    public Object visitLogicalExpr(Expr.Logical expr) {
+        var left = expr.left.accept(this);
+
+        if (expr.operator.type() == TokenType.OR) {
+            if (isTruthy(left)) {
+                return left;
+            }
+        } else {
+            if (!isTruthy(left)) {
+                return left;
+            }
+        }
+
+        return expr.right.accept(this);
     }
 
     @Override
@@ -234,6 +239,17 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     @Override
+    public Void visitIfStmt(Stmt.If stmt) {
+        if (isTruthy(stmt.condition.accept(this))) {
+            stmt.thenBranch.accept(this);
+        } else if (stmt.elseBranch != null) {
+            stmt.elseBranch.accept(this);
+        }
+
+        return null;
+    }
+
+    @Override
     public Void visitPrintStmt(Stmt.Print stmt) {
         System.out.println(stringify(stmt.expression.accept(this)));
         return null;
@@ -243,6 +259,15 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     public Void visitVarStmt(Stmt.Var stmt) {
         var value = stmt.initializer == null ? null : stmt.initializer.accept(this);
         environment.define(stmt.name.lexeme(), value);
+        return null;
+    }
+
+    @Override
+    public Void visitWhileStmt(Stmt.While stmt) {
+        while (isTruthy(stmt.condition.accept(this))) {
+            stmt.body.accept(this);
+        }
+
         return null;
     }
 
